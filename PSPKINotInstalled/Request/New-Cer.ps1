@@ -58,15 +58,19 @@ function New-Cer {
 
     if (-not $TargetCA) {
         $TargetCA = Select-TargetCA
+        if (-not $TargetCA) { return }
     }
+
+    Write-Host "Autorité de certification à interroger : $TargetCA"
 
     if (-not (Get-Content -Path $RSPFile -ErrorAction Ignore) -and -not $RequestID) {
         if (-not $CertificateTemplate) {
             if (-not $UseMachine) {
                 $CertificateTemplate = Select-Template -TargetCA $TargetCA
+                if (-not $CertificateTemplate) { return }
             } else {
                 Write-Host -ForegroundColor Yellow "Il faut obligatoirement indiquer un modèle de certificat lors de l'utilisation du paramètre -InstallMachine.`nFermeture du programme..."
-                exit
+                return
             }            
         }
 
@@ -118,7 +122,7 @@ function New-Cer {
             Write-Host "La demande pour ce certificat porte l'identifiant $RequestID. Cet identifiant est enregistré dans le fichier $RSPFile."
             Write-Host "Attendez qu'il soit délivré et relancez le programme."
             Write-Host "Arrêt..."
-            exit
+            return
         }        
     }    
 

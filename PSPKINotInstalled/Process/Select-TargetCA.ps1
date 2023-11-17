@@ -18,6 +18,7 @@ function Select-TargetCA {
 
     if (-not $AvailableCA) {
         Write-Host -ForegroundColor Yellow "Aucune autorité de certification joignable actuellement.`nFermeture du programme."
+        return
     } elseif ($AvailableCA.Length -eq 1) {
         return $AvailableCA[0]
     }
@@ -36,6 +37,6 @@ function Select-TargetCA {
         }
     } catch {
         Write-Host -ForegroundColor Yellow "Choix incorrect, fermeture du programme"       
-        exit
+        return
     } 
 }
