@@ -1,12 +1,4 @@
-﻿<#
-if (Get-Module -Name "PSPKI") {
-    # Import PSPKI Installed
-
-} else {
-    # Import PSPKI Not Installed
-    Get-ChildItem -Path $PSScriptRoot -Include *.ps1 -Recurse | Forech-Object { . $_.FullName }
-}
-#>
+﻿Add-Type -AssemblyName System.Windows.Forms
 
 #Définition des variables globales pour les opérations 'match'
 switch ((Get-UICulture).Name) {
@@ -21,13 +13,6 @@ switch ((Get-UICulture).Name) {
         $global:DeniedStr = "Denied"
         $global:ErrorStr = "Error"
         $global:CurrentUserStr = "CurrentUser"
-        $global:KeyContainerStr = "Key container"
-        $global:SerialNumberStr = "Serial Number"
-        $global:IssuerStr = "Issuer"
-        $global:NotBeforeStr = "NotBefore"
-        $global:NotAfterStr = "NotAfter"
-        $global:SubjectStr = "Subject"
-        $global:TemplateStr = "Template"
         $global:ExportPKExcpetionStr = "Export"
         $global:GetPKExcpetionStr = "GetRSAPrivateKey"
     }
@@ -42,18 +27,33 @@ switch ((Get-UICulture).Name) {
         $global:DeniedStr = "Denied"
         $global:ErrorStr = "Error"
         $global:CurrentUserStr = "CurrentUser"
-        $global:KeyContainerStr = "Nom de conteneur simple"
-        $global:SerialNumberStr = "Numéro de série"
-        $global:IssuerStr = "Émetteur"
-        $global:NotBeforeStr = "NotBefore"
-        $global:NotAfterStr = "NotAfter"
-        $global:SubjectStr = "Objet"
-        $global:TemplateStr = "Modèle"
         $global:ExportPKExcpetionStr = "Export"
         $global:GetPKExcpetionStr = "GetRSAPrivateKey"
     }
 }
 
-Get-ChildItem -Path $PSScriptRoot -Include *.ps1 -Recurse | Foreach-Object { . $_.FullName }
+$ExcludedModules = @()
 
-Export-ModuleMember -Function @(Get-ChildItem $PSScriptRoot -Include *.ps1 -Recurse | ForEach-Object {$_.Name -replace ".ps1"})
+if (Get-Module "PSPKI") {    
+    $Import = $true
+} else {
+    try {
+        Import-Module "PSPKI" -ErrorAction Stop
+        $Import = $true
+    } catch {
+        $Import = $false
+    }
+}
+
+if ($Import) {
+    #Import PSPKIInstalled, exclude imported Modules from next import
+    $PSPKIInstalledModules = Get-ChildItem -Path "$PSScriptRoot`\PSPKIInstalled" -Include *.ps1 -Recurse
+    foreach ($Module in $PSPKIInstalledModules) {
+        . $Module.FullName
+        $ExcludedModules += $Module.FullName -replace "PSPKIInstalled", "PSPKINotInstalled"
+    }
+}
+
+Get-ChildItem -Path "$PSScriptRoot`\PSPKINotInstalled" -Include *.ps1 -Recurse | Where-Object { $ExcludedModules -notcontains $_.FullName } | Foreach-Object { . $_.FullName }
+
+Export-ModuleMember -Function @(Get-ChildItem "$PSScriptRoot`\PSPKINotInstalled" -Include *.ps1 -Recurse | ForEach-Object {$_.Name -replace ".ps1"})
