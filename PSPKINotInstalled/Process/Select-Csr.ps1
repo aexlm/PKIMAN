@@ -26,7 +26,9 @@ function Select-Csr {
         $InitialDirectory
     )
 
-    if (-not (Get-Content -Path $Path -ErrorAction Ignore)) {
+    $CSRFile = Get-Content -Path $Path -ErrorAction SilentlyContinue
+
+    if (-not $CSRFile) {
         $OpenDialog = [System.Windows.Forms.OpenFileDialog]@{
             InitialDirectory = $InitialDirectory
             Filter = "CSR (*.csr;*.req)|*.csr;*.req|All files (*.*)|*.*"
@@ -37,7 +39,7 @@ function Select-Csr {
             Write-Host -ForegroundColor Yellow "Aucune requête sélectionnée, fermeture du programme."        
             return
         }
-    }    
+    }
     
     $CSRDump = C:\Windows\System32\certutil.exe -unicode -dump $Path
     
