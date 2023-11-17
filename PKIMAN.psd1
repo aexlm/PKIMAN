@@ -9,7 +9,7 @@
 @{
 
     # Script module or binary module file associated with this manifest.
-    # RootModule = ''
+    RootModule = 'PKIMAN.psm1'
     
     # Version number of this module.
     ModuleVersion = '0.0.1'
@@ -57,7 +57,7 @@
     # RequiredAssemblies = @()
     
     # Script files (.ps1) that are run in the caller's environment prior to importing this module.
-    # ScriptsToProcess = @()
+    ScriptsToProcess = @()
     
     # Type files (.ps1xml) to be loaded when importing this module
     # TypesToProcess = @()
@@ -66,10 +66,10 @@
     # FormatsToProcess = @()
     
     # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-    # NestedModules = @()
+    NestedModules = @()
     
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = @()
+    FunctionsToExport = '*'
     
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport = '*'
@@ -84,7 +84,7 @@
     # DscResourcesToExport = @()
     
     # List of all modules packaged with this module
-    # ModuleList = @()
+    ModuleList = @()
     
     # List of all files packaged with this module
     FileList = 'PKIMAN.psd1', 'PKIMAN.psm1'
@@ -129,5 +129,5 @@
     # DefaultCommandPrefix = ''
     
     }
-    
+
     

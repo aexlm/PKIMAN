@@ -22,15 +22,9 @@ function Remove-PrivateKey {
         $Store
     )
 
-    $ShortStore = ($Store -split '\\')[-1]
-    if ($Store -match $global:CurrentUserStr) {
-        $CertDump = C:\Windows\System32\certutil.exe -unicode -user -store $ShortStore $Thumbprint
-    } else {
-        $CertDump = C:\Windows\System32\certutil.exe -unicode -store $ShortStore $Thumbprint
-    }
+    $Certificate = Get-ChildItem -Path "$Store\$Thumbprint"
 
-    #A vérifier
-    $KeyIdentifier = (($CertDump -match $global:KeyContainerStr) -split '[:=]')[-1].Trim()
+    $KeyIdentifier = $Certificate.PrivateKey.Key.KeyName
 
     if ($Store -match $global:CurrentUserStr) {
         Write-Host "Commande pour supprimer la clé privée : certutil -user -delkey $KeyIdentifier`n"
@@ -44,10 +38,7 @@ function Remove-PrivateKey {
     if ($Choice.ToLower() -eq 'y') {
         C:\Windows\System32\certutil.exe -user -delkey $KeyIdentifier > $null
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "La clé privée $KeyIdentifier correspondant au certificat $Thumbprint a été supprimée."
-            return $true
+            Write-Host "La clé privée $KeyIdentifier correspondant au certificat $Thumbprint a été supprimée."            
         }
     }
-
-    return $false
 }
