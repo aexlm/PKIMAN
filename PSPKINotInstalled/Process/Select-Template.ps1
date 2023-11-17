@@ -25,7 +25,7 @@ function Select-Template {
 
     if (-not $AvailableTemplates) {
         Write-Host -ForegroundColor Yellow "Aucun modèle de certificat disponible à la demande.`nFermeture du programme."
-        exit
+        return
     }
 
     Write-Host "Sélectionner un modèle de certificat disponible :"
@@ -42,6 +42,6 @@ function Select-Template {
         }
     } catch {
         Write-Host -ForegroundColor Yellow "Choix incorrect, fermeture du programme"       
-        exit
+        return
     } 
 }
