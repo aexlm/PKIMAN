@@ -57,84 +57,36 @@ function Export-Results {
         $DeletedPrivateKey,
 
         [String]
-        $WorkingDirectory
+        $WorkingDirectory = ".\"
     )
 
-    $ShortStore = ($Store -split '\\')[-1]
-    if ($Store -match $global:CurrentUserStr) {
-        $CertDump = C:\Windows\System32\certutil.exe -unicode -user -store $ShortStore $Thumbprint
-    } else {
-        $CertDump = C:\Windows\System32\certutil.exe -unicode -store $ShortStore $CertObject.Thumbprint
-    }
+    $Certificate = Get-ChildItem -Path "$Store\$Thumbprint"
 
-    try {
-        $SN = (($CertDump -match $global:SerialNumberStr) -split ':')[-1].Trim()
-    } catch {
-        Write-Host -ForegroundColor Yellow "Impossible d'exporter le numéro de série."
-        $SN = "N\A"
-    }
-    
-    try {
-        $Issuer = (($CertDump -match $global:IssuerStr) -split ':')[-1].Trim()    
-    } catch {
-        Write-Host -ForegroundColor Yellow "Impossible d'exporter le nom de l'émetteur."
-        $Issuer = "N\A"
-    }
-    
-    try {
-        $NotBefore = [DateTime]::ParseExact(
-            $((($CertDump -match $global:NotBeforeStr) -split ': ')[-1]),
-            "$((Get-Culture).DateTimeFormat.ShortDatePattern) $((Get-Culture).DateTimeFormat.ShortTimePattern)", 
-            $null
-        )
-    } catch {
-        Write-Host -ForegroundColor Yellow "Impossible d'exporter la date de début de validité."
-        $NotBefore = "N\A"
-    }
-    
-    try {
-        $NotAfter = [DateTime]::ParseExact(
-            $((($CertDump -match $global:NotAfterStr) -split ': ')[-1]),
-            "$((Get-Culture).DateTimeFormat.ShortDatePattern) $((Get-Culture).DateTimeFormat.ShortTimePattern)", 
-            $null
-        )
-    } catch {
-        Write-Host -ForegroundColor Yellow "Impossible d'exporter la date d'expiration."
-        $NotAfter = "N\A"
-    }
-    
-    try {
-        $Subject = (($CertDump -match $global:SubjectStr) -split ':')[-1].Trim()
-    } catch {
-        Write-Host -ForegroundColor Yellow "Impossible d'exporter le sujet."
-        $Subject = "N\A"
-    }
-    
-    try {
-        $Template = (($CertDump -match $global:TemplateStr) -split ': ')[-1]
-    } catch {
-        Write-Host -ForegroundColor Yellow "Impossible d'exporter le modèle."
-        $Template = "N\A"
-    }
+    $TemplateExtension = $Certificate.Extensions | Where-Object { $_.Oid.Value -eq "1.3.6.1.4.1.311.21.7" }
+    $Template = $TemplateExtension.Format($true)
+
+    $SanExtension = $Certificate.Extensions | Where-Object { $_.Oid.Value -eq "2.5.29.17" }
+    $San = $SanExtension.Format($true)
     
     if (Get-Content -Path $PEMFilePath -ErrorAction Ignore) { $PEMExported = $PEMFilePath } else { $PEMExported = "Non" }
     if (Get-Content -Path $PFXFilePath -ErrorAction Ignore) { $PFXExported = $PFXFilePath } else { $PFXExported = "Non" }
-    if ($DeletedPrivateKey) { $DelKey = "Oui" } else { $DelKey = "Non" }
+    if ($Certificate.HasPrivateKey) { $DelKey = "Non" } else { $DelKey = "Oui" }
 
     $Export = [PSCustomObject]@{
-        "Sujet" = $Subject
+        "Sujet" = $Certificate.Subject
         "Template" = $Template
-        "Valide à partir de" = $NotBefore.ToString("dd/MM/yyyy HH:mm")
-        "Valide jusqu'au" = $NotAfter.ToString("dd/MM/yyyy HH:mm")
-        "Distribué par" = $Issuer
-        "Numéro de série"= $SN
+        "San" = $San
+        "Valide à partir de" = $Certificate.NotBefore.ToString("dd/MM/yyyy HH:mm")
+        "Valide jusqu'au" = $Certificate.NotAfter.ToString("dd/MM/yyyy HH:mm")
+        "Distribué par" = $Certificate.Issuer
+        "Numéro de série"= $Certificate.SerialNumber
         "Export en PEM" = $PEMExported
         "Export en PFX" = $PFXExported
         "Clé privée supprimée" = $DelKey
     }
 
     if (-not $CSVFilePath) {
-        $CSVFilePath = "$WorkingDirectory\Results.csv"
+        $CSVFilePath = "$WorkingDirectory`Results.csv"
         $Choice = Read-Host "Le chemin de sauvegarde par défaut est $CSVFilePath, souhaitez-vous le modifier ? (Y/N)"
         if ($Choice.ToLower() -ne 'n') {
             $SaveDialog = [System.Windows.Forms.SaveFileDialog]@{
