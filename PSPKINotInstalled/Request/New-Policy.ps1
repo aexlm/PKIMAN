@@ -86,8 +86,36 @@ function New-Policy {
     if (-not $San) {
         try {
             Write-Host "Tentative de résolution DNS pour construire le SAN..."
-            $Lookup = C:\Windows\System32\nslookup.exe $CN 2>&1
-            $San = "dns=$($CN)&dns=$(($Lookup[3] -Split ':')[1].Trim())&ipaddress=$(($Lookup[4] -Split ':')[1].Trim())"
+            $Lookup = Resolve-DnsName $CN -ErrorAction Stop
+            $Hostnames, $IpAddresses = @()
+            $Hostnames += $CN
+            foreach ($Row in $Lookup) {
+                if ($Row.Type -ne "SOA" -and $Row.Name -notin $Hostnames) {
+                    $Hostnames += $Row.Name
+                }
+                if ($Row.Type -eq "CNAME" -and $Row.NameHost -notin $Hostnames) {                                    
+                    $Hostnames += $Row.NameHost                    
+                } 
+                if ($Row.Type -eq "A" -and $Row.IP4Address -notin $IpAddresses) {
+                    $IpAddresses += $Row.IP4Address
+                }
+                
+            }
+
+            foreach ($Name in $Hostnames) {
+                $ShortName = ($Name -split '\.')[0]
+                if ($ShortName -notin $Hostnames -and $ShortName -ne $CN ) {
+                    $Hostnames += $ShortName
+                }
+            }
+            
+            foreach ($Name in $Hostnames) {
+                $San += "&dns=$Name"
+            }
+            foreach ($IpAddress in $IpAddresses) {
+                $San += "&ipaddress=$IpAddress"
+            }
+
             Write-Host -ForegroundColor Green "SAN construit : $SAN"
             $Choice = Read-Host "Le garder ? (Y/N)"
             if ($Choice.ToLower() -ne 'y') {
