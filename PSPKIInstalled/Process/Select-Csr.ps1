@@ -17,6 +17,9 @@
     Le répertoire par défaut à ouvrir pour sélectionner le fichier.
     Si aucune valeur n'est indiquée, ouvre le répertoire courrant.
 #>
+
+#Requires -Modules @{ ModuleName="PSPKI"; ModuleVersion="4.0.0" }
+
 function Select-Csr {
     param(
         [String]
