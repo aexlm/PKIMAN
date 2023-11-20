@@ -22,7 +22,7 @@
     Spécifie la taille de la clé.
     Les valeurs possibles sont 1024, 2048, 4096, 8192, 16384.
     Si non spécifié dans le fichier, la valeur par défaut est de 1024.
-    Par défaut, le script indique la valeur de 2048.
+    La valeur par défaut est 2048.
 
     .PARAMETER ExportableKey
     Indique si la clé privée peut être exportée une fois le certificat délivré.
@@ -37,13 +37,13 @@ function New-Policy {
         $San,
 
         [String]
-        $FilePath,
+        $FilePath = ".\Policy.inf",
 
         [String]
         $Subject,
 
         [Int]
-        $KeyLength,
+        $KeyLength = 2048,
 
         [Boolean]
         $ExportableKey,
@@ -87,19 +87,20 @@ function New-Policy {
         try {
             Write-Host "Tentative de résolution DNS pour construire le SAN..."
             $Lookup = Resolve-DnsName $CN -ErrorAction Stop
-            $Hostnames, $IpAddresses = @()
-            $Hostnames += $CN
+            $Hostnames = @()
+            $IpAddresses = @()
+            $San = "dns=$CN"
+
             foreach ($Row in $Lookup) {
-                if ($Row.Type -ne "SOA" -and $Row.Name -notin $Hostnames) {
+                if ($Row.Type -ne "SOA" -and $Row.Name -notin $Hostnames -and $Row.Name -ne $CN) {
                     $Hostnames += $Row.Name
                 }
-                if ($Row.Type -eq "CNAME" -and $Row.NameHost -notin $Hostnames) {                                    
+                if ($Row.Type -eq "CNAME" -and $Row.NameHost -notin $Hostnames -and $Row.Name -ne $CN) {
                     $Hostnames += $Row.NameHost                    
                 } 
                 if ($Row.Type -eq "A" -and $Row.IP4Address -notin $IpAddresses) {
                     $IpAddresses += $Row.IP4Address
                 }
-                
             }
 
             foreach ($Name in $Hostnames) {
@@ -109,6 +110,8 @@ function New-Policy {
                 }
             }
             
+            $Hostnames = $Hostnames | Sort-Object
+
             foreach ($Name in $Hostnames) {
                 $San += "&dns=$Name"
             }
