@@ -12,8 +12,8 @@ function Select-TargetCA {
 
     $RawAvailableCA = (C:\Windows\System32\certutil.exe -unicode) -match $global:ConfigStr
     $AvailableCA = @()
-    foreach ($Template in $RawAvailableCA) {
-        $AvailableCA += ($Template -split ':')[1].Trim()
+    foreach ($CA in $RawAvailableCA) {
+        $AvailableCA += ($CA -split ':')[1].Trim()
     }
 
     if (-not $AvailableCA) {

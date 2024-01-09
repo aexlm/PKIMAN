@@ -52,9 +52,8 @@ function New-Cer {
         [Boolean]
         $UseMachine
     )
-    
-    $FileName = ($CERFile -split "\.cer$")[0]
-    $RSPFile = $FileName + ".rsp"    
+        
+    $RSPFile = $CERFile -replace "\.cer$", ".rsp" 
 
     if (-not $TargetCA) {
         $TargetCA = Select-TargetCA
@@ -62,12 +61,7 @@ function New-Cer {
 
     if (-not (Get-Content -Path $RSPFile -ErrorAction Ignore) -and -not $RequestID) {
         if (-not $CertificateTemplate) {
-            if (-not $UseMachine) {
-                $CertificateTemplate = Select-Template -TargetCA $TargetCA
-            } else {
-                Write-Host -ForegroundColor Yellow "Il faut obligatoirement indiquer un modèle de certificat lors de l'utilisation du paramètre -InstallMachine.`nFermeture du programme..."
-                exit
-            }            
+                $CertificateTemplate = Select-Template -TargetCA $TargetCA -MachineTemplates $UseMachine                        
         }
 
         if ($UseMachine) {

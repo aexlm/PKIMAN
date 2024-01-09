@@ -54,6 +54,16 @@ if ($Import) {
     }
 }
 
+if (-not $Import) {
+    #Définition du masque des droits d'accès sur les autorités de cetification
+    [Flags()] Enum CAAccessMask {
+        ManageCA = 1
+        ManageCertificates = 2
+        Read = 256
+        Enroll = 512
+    }    
+}
+
 Get-ChildItem -Path "$PSScriptRoot`\PSPKINotInstalled" -Include *.ps1 -Recurse | Where-Object { $ExcludedModules -notcontains $_.FullName } | Foreach-Object { . $_.FullName }
 
 Export-ModuleMember -Function @(Get-ChildItem "$PSScriptRoot`\PSPKINotInstalled" -Include *.ps1 -Recurse | ForEach-Object {$_.Name -replace ".ps1"})

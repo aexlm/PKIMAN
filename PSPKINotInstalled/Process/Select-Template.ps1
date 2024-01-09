@@ -14,10 +14,18 @@
 function Select-Template {
     param(
         [String]
-        $TargetCA
+        $TargetCA,
+
+        [Boolean]
+        $MachineTemplates
     )
 
-    $RawAvailableTemplates = (C:\Windows\System32\certutil.exe -unicode -config $TargetCA -CATemplates) -match $global:AutoEnrollStr    
+    if ($MachineTemplates) {
+        $RawAvailableTemplates = (C:\Windows\System32\certutil.exe -unicode -mt -config $TargetCA -CATemplates) -match $global:AutoEnrollStr    
+    } else {
+        $RawAvailableTemplates = (C:\Windows\System32\certutil.exe -unicode -config $TargetCA -CATemplates) -match $global:AutoEnrollStr    
+    }
+    
     $AvailableTemplates = @()
     foreach ($Template in $RawAvailableTemplates) {
         $AvailableTemplates += ($Template -split ':')[0]

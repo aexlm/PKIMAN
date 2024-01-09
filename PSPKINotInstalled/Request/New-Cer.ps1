@@ -26,7 +26,7 @@
     .PARAMETER CERFile
     L'emplacement dans lequel est sauvegardé le certificat au moment de sa récupération.
 
-    .PARAMETER RequestID
+    .PARAMETER RequestId
     L'identifiant de la demande.
 
     .PARAMETER UseMachine
@@ -47,7 +47,7 @@ function New-Cer {
         $CERFile,
 
         [Int]
-        $RequestID,
+        $RequestId,
 
         [Boolean]
         $UseMachine
@@ -63,7 +63,7 @@ function New-Cer {
 
     Write-Host "Autorité de certification à interroger : $TargetCA"
 
-    if (-not (Get-Content -Path $RSPFile -ErrorAction Ignore) -and -not $RequestID) {
+    if (-not (Get-Content -Path $RSPFile -ErrorAction Ignore) -and -not $RequestId) {
         if (-not $CertificateTemplate) {
             if (-not $UseMachine) {
                 $CertificateTemplate = Select-Template -TargetCA $TargetCA
@@ -84,34 +84,41 @@ function New-Cer {
         if (-not (Get-Content -Path $CERFile -ErrorAction Ignore)) {     
             $RequestId = ((($Submit -match $global:RequestIdStr) -split ':')[1] -replace '[«»]').Trim()
 
-            $("$global:RequestIdStr : $RequestID", (Get-Content -Path $RSPFile)) | Set-Content -Path $RSPFile
+            $("$global:RequestIdStr : $RequestId", (Get-Content -Path $RSPFile)) | Set-Content -Path $RSPFile
 
             Write-Host "Le certificat est en attente de validation."
-            Write-Host "La demande pour ce certificat porte l'identifiant $RequestID. Cet identifiant est enregistré dans le fichier $RSPFile."
+            Write-Host "La demande pour ce certificat porte l'identifiant $RequestId. Cet identifiant est enregistré dans le fichier $RSPFile."
         } else {
             Write-Host "Certificat récupéré et enregistré à l'emplacement $CERFile`n"
         }
 
     } else {
-        if (-not $RequestID) {
+        if (-not $RequestId) {
             $RequestId = (((Get-Content -Path $RSPFile -ErrorAction Ignore) -match $global:RequestIdStr) -split ':')[1].Trim()
         }
 
-        $Retry = Read-Host "Essayer de récupérer le certificat portant l'identifiant $RequestID ? (Y/N)"
+        if (Find-ManagementRights -TargetCA $TargetCA) {
+            $Issue = Read-Host "Souhaitez-vous délivrer le certificat portant l'identifiant $RequestId ? (Y/N)"
+            if ($Issue.ToLower() -eq 'y') {
+                $Issue = C:\Windows\System32\certutil.exe -unicode -config $TargetCA -resubmit $RequestId
+            }
+        }
+
+        $Retry = Read-Host "Essayer de récupérer le certificat portant l'identifiant $RequestId ? (Y/N)"
         while ($Retry.ToLower() -eq 'y') {
             $Retrieve = C:\Windows\System32\certreq.exe -unicode -retrieve -f -q -config $TargetCA $RequestId $CERFile
-            $("$global:RequestIdStr : $RequestID", (Get-Content -Path $RSPFile)) | Set-Content -Path $RSPFile
+            $("$global:RequestIdStr : $RequestId", (Get-Content -Path $RSPFile)) | Set-Content -Path $RSPFile
 
             if ($Retrieve -match $global:PendingStr) {                
                 $Retry = Read-Host "Le certificat n'a pas été délivré.`nRéessayer ? (Y/N)"
             } elseif ($Retrieve -match $global:DeniedStr) {
-                Write-Host -ForegroundColor Yellow "La demande de certificat portant l'identifiant $RequestID a été rejeté par un administrateur."
+                Write-Host -ForegroundColor Yellow "La demande de certificat portant l'identifiant $RequestId a été rejeté par un administrateur."
                 Write-Host -ForegroundColor Yellow "Veuillez procéder à une nouvelle requête."
                 exit
             } elseif ($Retrieve -match $global:ErrorStr) {
                 Write-Host -ForegroundColor Red "Erreur lors de la récupération du certificat."
                 Write-Host -ForegroundColor Red "Vérifiez que l'autorité $TargetCA soit en ligne."
-                Write-Host -ForegroundColor Red "Vérifiez que le certificat portant l'identifiant $RequestID existe."
+                Write-Host -ForegroundColor Red "Vérifiez que le certificat portant l'identifiant $RequestId existe."
                 exit
             } else {
                 Write-Host "Certificat récupéré et enregistré à l'emplacement $CERFile`n"
@@ -119,7 +126,7 @@ function New-Cer {
             }
         }
         if ($Retry.ToLower() -ne 'y') {
-            Write-Host "La demande pour ce certificat porte l'identifiant $RequestID. Cet identifiant est enregistré dans le fichier $RSPFile."
+            Write-Host "La demande pour ce certificat porte l'identifiant $RequestId. Cet identifiant est enregistré dans le fichier $RSPFile."
             Write-Host "Attendez qu'il soit délivré et relancez le programme."
             Write-Host "Arrêt..."
             return
