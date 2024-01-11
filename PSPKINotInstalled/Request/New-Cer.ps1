@@ -65,14 +65,14 @@ function New-Cer {
 
     if (-not (Get-Content -Path $RSPFile -ErrorAction Ignore) -and -not $RequestId) {
         if (-not $CertificateTemplate) {
-            if (-not $UseMachine) {
-                $CertificateTemplate = Select-Template -TargetCA $TargetCA
-                if (-not $CertificateTemplate) { return }
+            if ($UseMachine) {
+                $CertificateTemplate = Select-Template -TargetCA $TargetCA -MachineTemplates
             } else {
-                Write-Host -ForegroundColor Yellow "Il faut obligatoirement indiquer un modèle de certificat lors de l'utilisation du paramètre -InstallMachine.`nFermeture du programme..."
-                return
+                $CertificateTemplate = Select-Template -TargetCA $TargetCA
             }            
         }
+
+        if (-not $CertificateTemplate) { return }
 
         if ($UseMachine) {
             $Submit = C:\Windows\System32\certreq.exe -unicode -submit -AdminForceMachine -config "$TargetCA" -attrib "CertificateTemplate:$CertificateTemplate" $CSRFile $CERFile

@@ -3,6 +3,7 @@
     Demande et récupère le certificat voulu.
 
     .DESCRIPTION
+    WIP
     Au premier passage dans cette fonction, le fichier de demande est envoyé à l'autorité de certification sélectionnée.
     Si le certificat est directement délivré, il est enregistré immédiatement.
     Autrement, un fichier temporaire est créé (.rsp), indiquant que la demande a été faite mais que le certificat n'a pas été délivré.

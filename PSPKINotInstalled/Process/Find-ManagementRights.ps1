@@ -17,14 +17,22 @@ function Find-ManagementRights {
         $TargetCA
     )
 
+    $LocalMachineName = [System.Net.Dns]::GetHostByName($env:computerName).HostName
+
     if ($TargetCA) {
+        $TargetCA = $TargetCA -replace '"'
         $ServerName, $CAName = $TargetCA.Split('\')
-        $RegPath = "Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\CertSvc\Configuration\$CAName"    
-        $SD_Bin = Invoke-Command -ComputerName $ServerName -ScriptBlock {Get-ItemPropertyValue -Path $Using:RegPath -Name 'Security'}
-    } else {        
+    } else {
         $CAName = Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\CertSvc\Configuration' -Name 'Active'
-        $RegPath = "Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\CertSvc\Configuration\$CAName"
+        $ServerName = $LocalMachineName
+    }
+
+    $RegPath = "Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\CertSvc\Configuration\$CAName"
+
+    if ($ServerName -eq $LocalMachineName) {
         $SD_Bin = Get-ItemPropertyValue -Path $RegPath -Name 'Security'
+    } else {
+        $SD_Bin = Invoke-Command -ComputerName $ServerName -ScriptBlock {Get-ItemPropertyValue -Path $Using:RegPath -Name 'Security'}
     }
     
     $SD = New-Object -TypeName System.Security.AccessControl.CommonSecurityDescriptor -ArgumentList @($false, $false, $SD_Bin, 0)

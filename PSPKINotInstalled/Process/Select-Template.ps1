@@ -16,24 +16,31 @@ function Select-Template {
         [String]
         $TargetCA,
 
-        [Boolean]
+        [Switch]
         $MachineTemplates
     )
 
     if ($MachineTemplates) {
-        $RawAvailableTemplates = (C:\Windows\System32\certutil.exe -unicode -mt -config $TargetCA -CATemplates) -match $global:AutoEnrollStr    
+        $AvailableTemplates, $ErrorTemplates = Get-AvailableTemplates -TargetCA $TargetCA -UseMachine
     } else {
-        $RawAvailableTemplates = (C:\Windows\System32\certutil.exe -unicode -config $TargetCA -CATemplates) -match $global:AutoEnrollStr    
-    }
-    
-    $AvailableTemplates = @()
-    foreach ($Template in $RawAvailableTemplates) {
-        $AvailableTemplates += ($Template -split ':')[0]
-    }
+        $AvailableTemplates, $ErrorTemplates = Get-AvailableTemplates -TargetCA $TargetCA
+    }            
 
     if (-not $AvailableTemplates) {
         Write-Host -ForegroundColor Yellow "Aucun modèle de certificat disponible à la demande.`nFermeture du programme."
         return
+    }
+
+    if ($ErrorTemplates) {
+        if ($ErrorTemplates.Count -eq 1) {
+            Write-Host -ForegroundColor Yellow "Attention, un template distribué par l'autorité $TargetCA est en erreur :"
+        } else {
+            Write-Host -ForegroundColor Yellow "Attention, plusieurs templates distribués par l'autorité $TargetCA sont en erreur :"
+        }
+        
+        foreach ($ErrTemp in $ErrorTemplates) {
+            Write-Host -ForegroundColor Yellow "- $ErrTemp"
+        }
     }
 
     Write-Host "Sélectionner un modèle de certificat disponible :"

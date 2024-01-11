@@ -26,8 +26,12 @@ function Select-Csr {
         $InitialDirectory
     )
 
-    $CSRFile = Get-Content -Path $Path -ErrorAction SilentlyContinue
-
+    try {
+        $CSRFile = Get-Content -Path $Path
+    } catch [System.Management.Automation.ParameterBindingValidationException] {
+        continue
+    }
+    
     if (-not $CSRFile) {
         $OpenDialog = [System.Windows.Forms.OpenFileDialog]@{
             InitialDirectory = $InitialDirectory
