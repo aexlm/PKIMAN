@@ -10,14 +10,16 @@
 #>
 function Select-TargetCA {
 
-    $RawAvailableCA = (C:\Windows\System32\certutil.exe -unicode) -match $global:ConfigStr
+    $ConfigContext = "CN=Enrollment Services,CN=Public Key Services,CN=Services," + $(([ADSI]"LDAP://RootDSE").configurationNamingContext)
+    $Filter = "(ObjectClass=pkIEnrollmentService)"
+    $Search = New-object System.DirectoryServices.DirectorySearcher([ADSI]"LDAP://$ConfigContext","$Filter")
+
     $AvailableCA = @()
-    foreach ($Template in $RawAvailableCA) {
-        $AvailableCA += ($Template -split ':')[1].Trim()
-    }
+    $Search.FindAll() | ForEach-Object {$AvailableCA += "`"$($_.Properties.dnshostname)\$($_.Properties.name)`""}
 
     if (-not $AvailableCA) {
         Write-Host -ForegroundColor Yellow "Aucune autorité de certification joignable actuellement.`nFermeture du programme."
+        return
     } elseif ($AvailableCA.Length -eq 1) {
         return $AvailableCA[0]
     }
@@ -36,6 +38,6 @@ function Select-TargetCA {
         }
     } catch {
         Write-Host -ForegroundColor Yellow "Choix incorrect, fermeture du programme"       
-        exit
+        return
     } 
 }

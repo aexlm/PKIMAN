@@ -47,12 +47,21 @@ if (Get-Module "PSPKI") {
 
 if ($Import) {
     #Import PSPKIInstalled, exclude imported Modules from next import
-    $PSPKIInstalledModules = Get-ChildItem -Path "$PSScriptRoot`\PSPKIInstalled" -Include *.ps1 -Recurse
+    $PSPKIInstalledModules = Get-ChildItem -Path "$PSScriptRoot`\PSPKIInstalled" -Include *.ps1 -Recurse -Exclude "New-Cer.ps1"
     foreach ($Module in $PSPKIInstalledModules) {
         . $Module.FullName
         $ExcludedModules += $Module.FullName -replace "PSPKIInstalled", "PSPKINotInstalled"
     }
 }
+
+#Définition du masque des droits d'accès sur les autorités de cetification
+[Flags()] Enum CAAccessMask {
+    ManageCA = 1
+    ManageCertificates = 2
+    Read = 256
+    Enroll = 512
+}    
+
 
 Get-ChildItem -Path "$PSScriptRoot`\PSPKINotInstalled" -Include *.ps1 -Recurse | Where-Object { $ExcludedModules -notcontains $_.FullName } | Foreach-Object { . $_.FullName }
 

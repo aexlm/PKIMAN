@@ -3,6 +3,7 @@
     Demande et récupère le certificat voulu.
 
     .DESCRIPTION
+    WIP
     Au premier passage dans cette fonction, le fichier de demande est envoyé à l'autorité de certification sélectionnée.
     Si le certificat est directement délivré, il est enregistré immédiatement.
     Autrement, un fichier temporaire est créé (.rsp), indiquant que la demande a été faite mais que le certificat n'a pas été délivré.
@@ -52,9 +53,8 @@ function New-Cer {
         [Boolean]
         $UseMachine
     )
-    
-    $FileName = ($CERFile -split "\.cer$")[0]
-    $RSPFile = $FileName + ".rsp"    
+        
+    $RSPFile = $CERFile -replace "\.cer$", ".rsp" 
 
     if (-not $TargetCA) {
         $TargetCA = Select-TargetCA
@@ -62,12 +62,7 @@ function New-Cer {
 
     if (-not (Get-Content -Path $RSPFile -ErrorAction Ignore) -and -not $RequestID) {
         if (-not $CertificateTemplate) {
-            if (-not $UseMachine) {
-                $CertificateTemplate = Select-Template -TargetCA $TargetCA
-            } else {
-                Write-Host -ForegroundColor Yellow "Il faut obligatoirement indiquer un modèle de certificat lors de l'utilisation du paramètre -InstallMachine.`nFermeture du programme..."
-                exit
-            }            
+                $CertificateTemplate = Select-Template -TargetCA $TargetCA -MachineTemplates $UseMachine                        
         }
 
         if ($UseMachine) {
